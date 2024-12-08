@@ -4,8 +4,9 @@ from object_from_video import detect_objects_in_video  # Ensure this function ha
 import cv2
 import os
 
-st.title("YOLO Object Detection with Streamlit")
-
+st.title("Object Detection with YOLO")
+st.text("This webapp can detect object from a Image or a Video")
+st.text("Use the sidebar to select between Image and Video")
 # Sidebar for user options
 st.sidebar.title("Options")
 option = st.sidebar.selectbox("Choose a mode:", ("Image Detection", "Video Detection"))
