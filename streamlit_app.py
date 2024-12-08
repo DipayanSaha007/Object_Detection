@@ -3,6 +3,7 @@ from object_from_image import detect_objects_in_image  # Ensure this function ha
 from object_from_video import detect_objects_in_video  # Ensure this function handles video detection
 import cv2
 import os
+import time
 
 st.title("Object Detection with YOLO")
 st.text("This webapp can detect object from a Image or a Video")
@@ -21,13 +22,13 @@ if option == "Image Detection":
             f.write(uploaded_file.read())
         
         # Initialize progress bar
+        st.text("Processing Image...")
         progress_bar = st.progress(0)
         
         # Simulate image processing time
         for percent in range(0, 101, 20):
-            st.text(f"Processing: {percent}%")
             progress_bar.progress(percent)
-            st.time.sleep(0.5)  # Simulate time delay
+            time.sleep(0.5)  # Simulate time delay
         
         # Perform object detection
         st.text("Finalizing image processing...")
@@ -48,7 +49,7 @@ elif option == "Video Detection":
         with open("uploaded_video.mp4", "wb") as f:
             f.write(uploaded_video.read())
         
-        st.text("Processing video...")
+        st.text("Processing Video...")
         
         # Open the video to calculate total frames
         cap = cv2.VideoCapture("uploaded_video.mp4")
