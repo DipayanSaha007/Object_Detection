@@ -1,12 +1,11 @@
 import streamlit as st
 from object_from_image import detect_objects_in_image  # Ensure this function handles image detection
 from object_from_video import detect_objects_in_video  # Ensure this function handles video detection
+import cv2
 import os
-import time  # For simulating progress updates
 
-st.title("Object Detection with YOLO")
-st.text("This webapp can detect object from a Image or a Video")
-st.text("Use the sidebar to select between Image and Video")
+st.title("YOLO Object Detection with Streamlit")
+
 # Sidebar for user options
 st.sidebar.title("Options")
 option = st.sidebar.selectbox("Choose a mode:", ("Image Detection", "Video Detection"))
@@ -20,13 +19,17 @@ if option == "Image Detection":
         with open("uploaded_image.jpg", "wb") as f:
             f.write(uploaded_file.read())
         
-        # Perform object detection
-        st.text("Processing image...")
-        progress_bar = st.progress(0)  # Initialize progress bar
-        for percent in range(0, 101, 20):  # Simulating progress
-            time.sleep(0.1)  # Simulate processing delay
-            progress_bar.progress(percent)
+        # Initialize progress bar
+        progress_bar = st.progress(0)
         
+        # Simulate image processing time
+        for percent in range(0, 101, 20):
+            st.text(f"Processing: {percent}%")
+            progress_bar.progress(percent)
+            st.time.sleep(0.5)  # Simulate time delay
+        
+        # Perform object detection
+        st.text("Finalizing image processing...")
         processed_image = detect_objects_in_image("uploaded_image.jpg")
         
         # Display results
@@ -34,7 +37,6 @@ if option == "Image Detection":
         
         # Clean up uploaded image
         os.remove("uploaded_image.jpg")
-        st.success("Image processing complete!")
 
 elif option == "Video Detection":
     st.header("Video Detection")
@@ -47,14 +49,26 @@ elif option == "Video Detection":
         
         st.text("Processing video...")
         
+        # Open the video to calculate total frames
+        cap = cv2.VideoCapture("uploaded_video.mp4")
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
+
         # Initialize progress bar
         progress_bar = st.progress(0)
-        for percent in range(0, 101, 10):  # Simulating progress for video processing
-            time.sleep(0.3)  # Simulate processing delay
-            progress_bar.progress(percent)
-        
+
         # Process the video and get the output path
-        processed_video_path = detect_objects_in_video("uploaded_video.mp4")
+        def video_processing_with_progress(video_path):
+            processed_video_path = detect_objects_in_video(
+                video_path,
+                progress_callback=lambda processed_frames: progress_bar.progress(
+                    int((processed_frames / total_frames) * 100)
+                ),
+            )
+            return processed_video_path
+
+        # Call the video processing function with progress updates
+        processed_video_path = video_processing_with_progress("uploaded_video.mp4")
 
         # Check if the file exists and display it
         if processed_video_path and os.path.exists(processed_video_path):
@@ -73,4 +87,3 @@ elif option == "Video Detection":
         
         # Clean up uploaded video
         os.remove("uploaded_video.mp4")
-        st.success("Video processing complete!")
