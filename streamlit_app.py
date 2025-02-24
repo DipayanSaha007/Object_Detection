@@ -41,10 +41,15 @@ if option == "Image Detection":
         # Print detected objects with their counts
         if detected_objects:
             st.subheader("Detected Objects")
-            for obj, count in detected_objects.items():
-                st.write(f"{obj}: {count}")
+            if isinstance(detected_objects, dict):  # If it's a dictionary
+                for obj, count in detected_objects.items():
+                    st.write(f"{obj}: {count}")
+            elif isinstance(detected_objects, list):  # If it's a list, print all items
+                for obj in detected_objects:
+                    st.write(f"Detected: {obj}")
         else:
             st.write("No objects detected.")
+
 
         os.remove("uploaded_image.jpg")
 
