@@ -52,7 +52,7 @@ if option == "Image Detection":
         object_counts = get_object_counts(results)
 
         # Display processed image
-        st.image(processed_image, caption="Processed Image", use_column_width=True)
+        st.image(processed_image, caption="Processed Image", use_container_width=True)
         
         # Display object counts
         st.subheader("Detected Objects:")
