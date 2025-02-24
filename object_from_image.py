@@ -11,15 +11,26 @@ def detect_objects_in_image(image_path):
     # Perform inference
     results = model(image)
 
+    # Dictionary to store detected objects
+    detected_objects = []
+
     # Draw results on the image
     for result in results:
         boxes = result.boxes  # Detected bounding boxes
         for box in boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-            confidence = box.conf[0]
+            confidence = float(box.conf[0])
             class_id = int(box.cls[0])
             label = model.names[class_id]
 
+            # Store detected object details
+            detected_objects.append({
+                "label": label,
+                "confidence": confidence,
+                "box": (x1, y1, x2, y2)
+            })
+
+            # Draw bounding box and label
             color = (0, 255, 0)
             cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
             cv2.putText(image, f"{label} {confidence:.2f}", (x1, y1 - 10),
@@ -27,4 +38,5 @@ def detect_objects_in_image(image_path):
 
     # Convert the processed image to RGB (for Streamlit display)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    return image
+
+    return image, detected_objects  # Returning both image and detected objects
