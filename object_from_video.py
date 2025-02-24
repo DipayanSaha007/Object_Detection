@@ -38,13 +38,23 @@ def detect_objects_in_video(video_path, progress_callback=None):
         # Perform object detection
         results = model(frame)
 
+        # Store detected objects for the current frame
+        detected_objects = []
+
         # Draw bounding boxes and labels
         for result in results:
             for box in result.boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-                confidence = box.conf[0]
+                confidence = float(box.conf[0])
                 class_id = int(box.cls[0])
                 label = model.names[class_id]
+
+                detected_objects.append({
+                    "label": label,
+                    "confidence": confidence,
+                    "box": (x1, y1, x2, y2)
+                })
+
                 color = (0, 255, 0)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, f"{label} {confidence:.2f}", (x1, y1 - 10),
@@ -53,10 +63,10 @@ def detect_objects_in_video(video_path, progress_callback=None):
         # Write processed frame to output
         out.write(frame)
 
-        # Update progress
+        # Update progress with both frame count and detected objects
         processed_frames += 1
         if progress_callback:
-            progress_callback(processed_frames)
+            progress_callback(processed_frames, detected_objects)
 
     cap.release()
     out.release()
