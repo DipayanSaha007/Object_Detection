@@ -105,7 +105,11 @@ elif option == "Webcam Detection":
     st.text("Press 'Start' to begin detecting objects from your webcam")
 
     if st.button("Start"):
-        cap = cv2.VideoCapture(0)
+        for i in range(5):  # Try indexes from 0 to 4
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                print(f"Camera found at index {i}")
+                cap.release()
         model = YOLO('yolov8n.pt')
         detected_objects_live = {}
 
