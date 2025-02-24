@@ -1,34 +1,20 @@
 import streamlit as st
-from object_from_image import detect_objects_in_image  # Function for image detection
-from object_from_video import detect_objects_in_video  # Function for video detection
+from object_from_image import detect_objects_in_image  
+from object_from_video import detect_objects_in_video  
 import cv2
 import os
 import time
 from ultralytics import YOLO
-from collections import Counter
 
-# Load YOLO model
-model = YOLO('yolov8n.pt')
+YOLO('yolov8n.pt')  # Automatically download model if not available
 
 st.title("Object Detection with YOLO")
-st.text("This webapp can detect objects from an Image, a Video, or a Webcam stream.")
-st.text("Use the sidebar to select between Image, Video, and Webcam.")
+st.text("This webapp can detect objects from an Image, a Video, or a Webcam stream")
+st.text("Use the sidebar to select between Image, Video, and Webcam")
 
 # Sidebar for user options
 st.sidebar.title("Options")
 option = st.sidebar.selectbox("Choose a mode:", ("Image Detection", "Video Detection", "Webcam Detection"))
-
-def get_object_counts(results):
-    """Extract object counts from YOLO results."""
-    object_counts = Counter()
-    
-    for result in results:
-        for box in result.boxes:
-            class_id = int(box.cls[0])  # Object class index
-            label = model.names[class_id]  # Get object name
-            object_counts[label] += 1  # Count occurrences
-    
-    return object_counts
 
 if option == "Image Detection":
     st.header("Image Detection")
@@ -37,27 +23,26 @@ if option == "Image Detection":
     if uploaded_file is not None:
         with open("uploaded_image.jpg", "wb") as f:
             f.write(uploaded_file.read())
-        
-        st.text("Processing")
+
+        st.text("Processing...")
         progress_bar = st.progress(0)
         for percent in range(0, 101, 20):
             progress_bar.progress(percent)
             time.sleep(0.5)
 
-        # Detect objects
-        results = model("uploaded_image.jpg")
-        processed_image = results[0].plot()
-
-        # Get object counts
-        object_counts = get_object_counts(results)
+        st.text("Finalizing image processing...")
+        processed_image, detected_objects = detect_objects_in_image("uploaded_image.jpg")
 
         # Display processed image
         st.image(processed_image, caption="Processed Image", use_container_width=True)
-        
-        # Display object counts
-        st.subheader("Detected Objects:")
-        for obj, count in object_counts.items():
-            st.write(f"**{obj}: {count}**")
+
+        # Print detected objects with their counts
+        if detected_objects:
+            st.subheader("Detected Objects")
+            for obj, count in detected_objects.items():
+                st.write(f"{obj}: {count}")
+        else:
+            st.write("No objects detected.")
 
         os.remove("uploaded_image.jpg")
 
@@ -76,20 +61,18 @@ elif option == "Video Detection":
 
         progress_bar = st.progress(0)
 
-        object_counts = Counter()  # Store total detected object counts
+        detected_objects_summary = {}
 
         def video_processing_with_progress(video_path):
-            def progress_callback(processed_frames, frame_results):
-                # Update progress bar
-                progress_bar.progress(int((processed_frames / total_frames) * 100))
-                
-                # Count detected objects in the frame
-                frame_object_counts = get_object_counts(frame_results)
-                object_counts.update(frame_object_counts)
-
-            processed_video_path = detect_objects_in_video(video_path, progress_callback)
+            global detected_objects_summary
+            processed_video_path, detected_objects_summary = detect_objects_in_video(
+                video_path,
+                progress_callback=lambda processed_frames, frame_results: progress_bar.progress(
+                    int((processed_frames / total_frames) * 100)
+                ),
+            )
             return processed_video_path
-
+        
         processed_video_path = video_processing_with_progress("uploaded_video.mp4")
 
         if processed_video_path and os.path.exists(processed_video_path):
@@ -102,10 +85,10 @@ elif option == "Video Detection":
                     mime="video/mp4"
                 )
 
-            # Display object counts
-            st.subheader("Detected Objects in Video:")
-            for obj, count in object_counts.items():
-                st.write(f"**{obj}: {count}**")
+            # Print detected objects summary
+            st.subheader("Detected Objects in Video")
+            for obj, count in detected_objects_summary.items():
+                st.write(f"{obj}: {count}")
 
         else:
             st.error("Processed video could not be found!")
@@ -118,6 +101,9 @@ elif option == "Webcam Detection":
 
     if st.button("Start"):
         cap = cv2.VideoCapture(0)
+        model = YOLO('yolov8n.pt')
+
+        detected_objects_live = {}
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -125,15 +111,27 @@ elif option == "Webcam Detection":
                 break
 
             results = model(frame)
-            processed_frame = results[0].plot()
+            for result in results:
+                boxes = result.boxes
+                for box in boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                    confidence = box.conf[0]
+                    class_id = int(box.cls[0])
+                    label = model.names[class_id]
+                    color = (0, 255, 0)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                    cv2.putText(frame, f"{label} {confidence:.2f}", (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-            # Get object counts
-            object_counts = get_object_counts(results)
+                    # Count detected objects
+                    detected_objects_live[label] = detected_objects_live.get(label, 0) + 1
 
-            # Display detected objects in real-time
-            st.image(processed_frame, channels="RGB")
-            st.subheader("Objects Detected in Current Frame:")
-            for obj, count in object_counts.items():
-                st.write(f"**{obj}: {count}**")
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            st.image(frame, channels="RGB")
 
         cap.release()
+
+        # Display detected objects from webcam
+        st.subheader("Detected Objects from Webcam")
+        for obj, count in detected_objects_live.items():
+            st.write(f"{obj}: {count}")
