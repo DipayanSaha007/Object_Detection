@@ -1,7 +1,7 @@
-import os
+# import os
 
-# Fix for missing libGL.so.1
-os.environ["LD_LIBRARY_PATH"] = "/usr/lib64:/usr/lib:/usr/local/lib:/usr/lib/x86_64-linux-gnu"
+# # Fix for missing libGL.so.1
+# os.environ["LD_LIBRARY_PATH"] = "/usr/lib64:/usr/lib:/usr/local/lib:/usr/lib/x86_64-linux-gnu"
 
 import streamlit as st
 from object_from_image import detect_objects_in_image  # Ensure this function handles image detection
@@ -9,12 +9,12 @@ from object_from_video import detect_objects_in_video  # Ensure this function ha
 import cv2
 import time
 from ultralytics import YOLO
-# Ensure libGL.so.1 is installed (Linux fix)
-try:
-    import ctypes
-    ctypes.CDLL("libGL.so.1")
-except OSError:
-    st.error("Missing OpenGL library. Please install it using `sudo apt-get install -y libgl1-mesa-glx`.")
+# # Ensure libGL.so.1 is installed (Linux fix)
+# try:
+#     import ctypes
+#     ctypes.CDLL("libGL.so.1")
+# except OSError:
+#     st.error("Missing OpenGL library. Please install it using `sudo apt-get install -y libgl1-mesa-glx`.")
 YOLO('yolov8n.pt')  # This will automatically download the model
 
 st.title("Object Detection with YOLO")
