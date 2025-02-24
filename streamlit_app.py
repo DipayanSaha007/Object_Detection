@@ -105,7 +105,7 @@ elif option == "Webcam Detection":
     st.text("Press 'Start' to begin detecting objects from your webcam")
 
     if st.button("Start"):
-        for i in range(5):  # Try indexes from 0 to 4
+        for i in range(50):  # Try indexes from 0 to 4
             cap = cv2.VideoCapture(i)
             if cap.isOpened():
                 print(f"Camera found at index {i}")
