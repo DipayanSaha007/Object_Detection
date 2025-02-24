@@ -4,8 +4,10 @@ from object_from_video import detect_objects_in_video
 import cv2
 import os
 import time
+import tempfile
 from ultralytics import YOLO
 
+# Load YOLO model
 YOLO('yolov8n.pt')  # Automatically download model if not available
 
 st.title("Object Detection with YOLO")
@@ -60,14 +62,13 @@ elif option == "Video Detection":
         cap.release()
 
         progress_bar = st.progress(0)
-
         detected_objects_summary = {}
 
         def video_processing_with_progress(video_path):
             global detected_objects_summary
             processed_video_path, detected_objects_summary = detect_objects_in_video(
                 video_path,
-                progress_callback=lambda processed_frames, frame_results: progress_bar.progress(
+                progress_callback=lambda processed_frames: progress_bar.progress(
                     int((processed_frames / total_frames) * 100)
                 ),
             )
@@ -89,7 +90,6 @@ elif option == "Video Detection":
             st.subheader("Detected Objects in Video")
             for obj, count in detected_objects_summary.items():
                 st.write(f"{obj}: {count}")
-
         else:
             st.error("Processed video could not be found!")
 
@@ -102,12 +102,12 @@ elif option == "Webcam Detection":
     if st.button("Start"):
         cap = cv2.VideoCapture(0)
         model = YOLO('yolov8n.pt')
-
         detected_objects_live = {}
 
+        stop_button = st.button("Stop")
         while cap.isOpened():
             ret, frame = cap.read()
-            if not ret:
+            if not ret or stop_button:
                 break
 
             results = model(frame)
